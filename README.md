@@ -1,10 +1,10 @@
-# 🦾 OpenClaw + Claude Code · Ortak Hafıza Sistemi
+# 🦾 Jarvis · v1
 
-> **İki ajanı birleştir. Aynı klasörü paylaşsınlar.**
-> OpenClaw günlük hayat işleri için, Claude Code kod için.
-> Notları biri yazar, diğeri okur. Discord'dan/her yerden erişilebilir.
+> **OpenClaw + Claude Code, ortak hafıza klasörüyle birleşmiş.**
+> İki ajan, tek vault, paylaşılan Markdown notları.
+> Discord'dan günlük işler, terminalden kod — aynı beyni okuyorlar.
 
-Bu repo, [@selma.builds](https://youtube.com/@selma.builds) YouTube videosunda kurduğum sistemin tüm dosyalarını içerir. Markdown şablonları, Discord bot kurulum rehberi, Obsidian wiki için LLM prompt'u — hepsi burada.
+Bu repo, [@selma.builds](https://youtube.com/@selma.builds) YouTube videosunda kurduğum **Jarvis v1**'in tüm dosyalarını içerir. Tony Stark Jarvis'i değil — kendi yaptığım, klasör adı **Jarvis** olan, çalışan, sade bir başlangıç. v2'de sesli kontrol, Telegram, otomatik routing gelecek.
 
 ```
    OpenClaw (Discord bot)  ─────►  ~/Jarvis/  ◄─────  Claude Code (Terminal)
@@ -162,12 +162,13 @@ Videoda bizzat denedim, bunlar yaşandı:
 
 ---
 
-## 🛣️ Bir sonraki video için (foreshadow)
+## 🛣️ Jarvis v2 için yol haritası
 
-- [ ] Telegram entegrasyonu (telefondan WhatsApp gibi)
+- [ ] Telegram / WhatsApp entegrasyonu (telefondan)
 - [ ] "Hey Jarvis" sesli kontrol (OpenWakeWord + Whisper)
 - [ ] Otomatik routing — hangi ajana gitsin?
 - [ ] iCloud Sync ile telefon-Mac uyumu
+- [ ] Mobil iOS shortcut
 
 ---
 
