@@ -62,13 +62,7 @@ Sesli kullanım ekleyince:
 
 ## Türkçe çalışıyor mu?
 
-Evet. Hem yazı hem ses (Whisper Türkçeyi tanır, gpt-5-mini Türkçe iyi konuşur). macOS `say` Türkçe sesi için "Yelda" sesini deneyebilirsin:
-
-```bash
-say -v Yelda "Merhaba, ben Jarvis."
-```
-
-`voice/jarvis_voice.py` içinde `Daniel` yerine `Yelda` yazarsan Türkçe konuşur. Ama "Hey Jarvis" wake word **İngilizce** — OpenWakeWord'ün eğitilmiş modeli sadece İngilizce çalışıyor.
+Evet. Hem OpenClaw'da hem Claude Code'da gpt-5-mini Türkçe iyi konuşur. Markdown dosyalarına Türkçe yazabilir, Türkçe sorabilir, Türkçe cevap alırsın.
 
 ---
 

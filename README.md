@@ -1,36 +1,35 @@
-# 🦾 Jarvis
+# 🦾 OpenClaw + Claude Code · Ortak Hafıza Sistemi
 
-> **İki AI ajanı, tek klasör, ortak hafıza.**
-> Telefondan Discord ile konuş, masada Claude Code ile devam et.
-> "Hey Jarvis" deyip sesli komut ver.
+> **İki ajanı birleştir. Aynı klasörü paylaşsınlar.**
+> OpenClaw günlük hayat işleri için, Claude Code kod için.
+> Notları biri yazar, diğeri okur. Discord'dan/her yerden erişilebilir.
 
-Kişisel AI asistanın için ihtiyacın olan tek şey **bir klasör + iki CLI**. Karmaşık orchestrator yok, propriyetary protokol yok, bulut yok. Sadece Markdown dosyaları.
+Bu repo, [@selma.builds](https://youtube.com/@selma.builds) YouTube videosunda kurduğum sistemin tüm dosyalarını içerir. Markdown şablonları, Discord bot kurulum rehberi, Obsidian wiki için LLM prompt'u — hepsi burada.
 
 ```
-   OpenClaw (Discord)  ─────►  ~/Jarvis/  ◄─────  Claude Code (Terminal)
-                                    ▲
-                                    │
-                              Voice (mic)
+   OpenClaw (Discord bot)  ─────►  ~/Jarvis/  ◄─────  Claude Code (Terminal)
+                                    Markdown
+                                  paylaşımlı vault
 ```
+
+**Mesajlaşma protokolü = dosya sistemi.** OpenClaw `memory/`'ye yazar, Claude Code okur. Tek API: `cat memory/*.md`.
 
 ---
 
 ## 🎬 Video
 
-YouTube: [@selma.builds](https://youtube.com/@selma.builds)
+YouTube: [@selma.builds](https://youtube.com/@selma.builds) · [video link buraya gelecek]
 
 ---
 
 ## ⚡ Ne yapıyor?
 
-| Bileşen | Görevi |
-|---|---|
-| **OpenClaw** | Discord botu olarak arka planda çalışır, telefondan/her yerden mesaj alır |
-| **Claude Code** | Terminalden aynı klasörü okur, Jarvis kişiliğine bürünür |
-| **Voice daemon** | "Hey Jarvis" wake word + Whisper STT + macOS `say` ile sesli yanıt |
-| **`~/Jarvis/`** | Hepsinin paylaştığı tek hafıza — Markdown dosyaları |
-
-**Mesajlaşma protokolü = dosya sistemi.** OpenClaw `memory/`'ye yazar, Claude Code okur. `cat memory/*.md` API'nin ta kendisi.
+| Bileşen | Görev | Nerede çalışır |
+|---|---|---|
+| **OpenClaw** | Discord botu olarak arka planda çalışır, mesaj alır, notu hafızaya yazar | LaunchAgent (7/24) |
+| **Claude Code** | Terminalden aynı klasörü okur, Jarvis kişiliğine bürünür | Sen `claude` deyince |
+| **`~/Jarvis/`** | Hepsinin paylaştığı tek hafıza | Markdown dosyaları |
+| **Obsidian** (opsiyonel) | Vault'u görsel grafik olarak gez | UI katmanı |
 
 ---
 
@@ -39,13 +38,13 @@ YouTube: [@selma.builds](https://youtube.com/@selma.builds)
 ### 1. Repoyu klonla
 
 ```bash
-git clone https://github.com/<kullanici>/jarvis.git ~/Jarvis
+git clone https://github.com/selmakcby/jarvis.git ~/Jarvis
 cd ~/Jarvis
 ```
 
 ### 2. Kişiliği özelleştir
 
-`USER.md` dosyasını aç, kendin hakkında 4 satır yaz. İstersen `CLAUDE.md` ve `SOUL.md`'yi de kendi tarzına göre düzenle.
+`USER.md` dosyasını aç, kendin hakkında 4 satır yaz. İstersen `CLAUDE.md`, `IDENTITY.md` ve `SOUL.md`'yi de düzenle.
 
 ### 3. Claude Code ile uyandır
 
@@ -53,15 +52,17 @@ cd ~/Jarvis
 cd ~/Jarvis && claude
 ```
 
-İlk soru: *"Merhaba, sen kimsin?"* — Jarvis cevap verir.
+İlk soru: *"Merhaba, sen kimsin?"* — Claude Code, `CLAUDE.md` ve `USER.md`'yi okuyup cevap verir.
 
-**Bitti.** Bu kadar. Tek başına Claude Code Jarvis tarafı çalışıyor.
+**Bu kadar.** Tek başına Claude Code tarafı çalışıyor — kişilikli, dosya farkında, hafıza yazabilen.
 
 ---
 
-## 📞 Discord botunu ekle (opsiyonel ama eğlenceli)
+## 📞 OpenClaw + Discord ekleme
 
-Discord botu sayesinde telefondan/her yerden Jarvis'e yazabilirsin. OpenAI API key gerekir (~$5 aylar yeter).
+Telefondan/her yerden erişim için OpenClaw kur. **OpenAI API key gerekir** (~$5 aylar yeter).
+
+> ⚠️ **Önemli:** Aynı makinede Claude Code varken **Anthropic API kullanma** — OpenClaw keychain'den Claude Pro kimliğini sessizce ele geçirir, kotanı tüketir. **OpenAI önerilir.**
 
 ```bash
 # 1. OpenClaw kur
@@ -69,40 +70,48 @@ npm install -g openclaw
 openclaw onboard
 # → "QuickStart" seç, sağlayıcı: OpenAI, model: gpt-5-mini
 
-# 2. Discord bot tokeni ekle
-# https://discord.com/developers/applications → New Application → Bot → Token
+# 2. OpenAI API key'i .env'e koy
+mkdir -p ~/.openclaw
+echo 'OPENAI_API_KEY=sk-proj-PASTE-HERE' > ~/.openclaw/secrets.env
+chmod 600 ~/.openclaw/secrets.env
 
-# 3. Workspace'i Jarvis'e yönlendir
+# 3. Key'i launchctl'e yükle (gateway daemon shell env görmez)
+set -a; source ~/.openclaw/secrets.env; set +a
+launchctl setenv OPENAI_API_KEY "$OPENAI_API_KEY"
+
+# 4. Workspace'i Jarvis klasörüne yönlendir (her iki ajan aynı yeri kullansın)
 openclaw config set agents.defaults.workspace $HOME/Jarvis
 
-# 4. Discord kanalını ekle
-openclaw channels add --channel discord --token "<DISCORD_BOT_TOKEN>"
+# 5. Discord botu oluştur, davet et, token'ı ekle
+# (https://discord.com/developers/applications → New Application → Bot → Token)
+echo 'DISCORD_BOT_TOKEN=PASTE-HERE' >> ~/.openclaw/secrets.env
+set -a; source ~/.openclaw/secrets.env; set +a
+launchctl setenv DISCORD_BOT_TOKEN "$DISCORD_BOT_TOKEN"
+openclaw channels add --channel discord --token "$DISCORD_BOT_TOKEN"
 
-# 5. Botu kendi sunucuna davet et, kendine DM at
-# Bot ilk mesajda "pairing code" verir, terminalde onayla:
-openclaw pairing approve discord <PAIRING_CODE>
+# 6. Gateway'i yeniden başlat
+pkill -9 -f openclaw-gateway && sleep 2 && openclaw gateway start
 ```
 
-Detaylı kılavuz: `docs/openclaw-kurulum.md`
+**Tam adım adım kılavuz:** [`docs/openclaw-kurulum.md`](docs/openclaw-kurulum.md)
 
 ---
 
-## 🎤 Sesli kontrol (opsiyonel)
+## 🌐 Obsidian + Wiki Linkler (videoda gösterilen)
 
-"Hey Jarvis" deyince mikrofondan dinleyip cevap veren Python daemon.
+Vault'u Obsidian'da açtığında dosyalar arası grafik bağlantı görmek istiyorsan, Claude Code'a şu prompt'u ver:
 
-```bash
-# 1. Bağımlılıklar
-pip install openwakeword sounddevice openai numpy onnxruntime
-
-# 2. OpenAI key'ini .env'e ekle
-echo 'OPENAI_API_KEY=sk-proj-...' > ~/Jarvis/voice/.env
-
-# 3. Çalıştır
-~/Jarvis/voice/run.sh
+```
+Senin workspace olan ~/Jarvis klasörünün içindeki tüm Markdown dosyalarına
+Obsidian-uyumlu [[wiki linkleri]] ekle. Her dosyanın içerisinde, ilgili olduğu
+diğer dosyalara referans ver. Örneğin CLAUDE.md içerisinde IDENTITY,
+USER, SOUL'a referans olsun. Dosyaların içeriğini değiştirme — sadece bağlantı ekle.
+Sonra Obsidian Graph view'da yapıyı göster.
 ```
 
-İlk çalıştırmada macOS mikrofon izni isteyecek → İzin Ver. Sonra **"Hey Jarvis, bugün ne var?"** de.
+Tam prompt: [`docs/llm-wiki-prompt.md`](docs/llm-wiki-prompt.md)
+
+Sonuç: Obsidian Graph view'da CLAUDE ↔ IDENTITY ↔ USER ↔ SOUL bağlı düğümler olarak görünüyor.
 
 ---
 
@@ -111,61 +120,66 @@ echo 'OPENAI_API_KEY=sk-proj-...' > ~/Jarvis/voice/.env
 ```
 ~/Jarvis/
 ├── CLAUDE.md            # Jarvis kişiliği (Claude Code okur)
-├── IDENTITY.md          # Jarvis kim (OpenClaw okur)
+├── IDENTITY.md          # Kim olduğu (OpenClaw okur)
 ├── USER.md              # Sen kimsin
 ├── SOUL.md              # Değerler + sınırlar
 ├── AGENTS.md, TOOLS.md  # Workspace dokümantasyonu
+├── HEARTBEAT.md         # Periyodik görevler
 ├── memory/              # Günlük notlar (her iki ajan yazar/okur)
 ├── inbox/               # Gelen kutusu
 ├── tasks/               # Aktif görevler
 ├── people/              # Kişiler
 ├── calendar/            # Takvim notları
-├── projects/            # Proje notları
-├── voice/               # Sesli daemon (jarvis_voice.py)
-└── diagram/             # Mimari şemaları (HTML, screenshot için)
+└── projects/            # Proje notları
 ```
 
 ---
 
-## 🤖 Hangi modeli kullanmalı?
+## 🤖 Hangi modeli kullanmalı? (videodan dersler)
 
-**Yerel modeller (16 GB MacBook'ta):**
-- `qwen2.5:7b-instruct` → tatlı nokta, en iyi tool-caller
-- `llama3.1:8b` → genel sohbet için
-- `gemma2:9b` → Türkçe nispeten güçlü
-- 14B → sıkışık, sadece tek başına çalışırken
-- 32B+ → unutmak en iyisi
+Videoda bizzat denedim, bunlar yaşandı:
 
-**Bulut modelleri:**
-- `gpt-5-mini` (OpenAI) → ✅ önerilen, ~$0.005/mesaj, hızlı
-- `claude-haiku-4-5` (Anthropic) → ⚠️ keychain hijack riski
-- `groq/*` → ücretsiz tier rate limit dar (1 req/dk)
+| Model | Sonuç |
+|---|---|
+| **Yerel (Ollama, qwen2.5:7b)** | ✕ 16 GB RAM'de çok yavaş, prefill 30+ saniye |
+| **Grok (xAI)** | ✕ Rate/auth limit problemi |
+| **Anthropic (claude-haiku)** | ✕ Keychain hijack — Claude Pro kotamı çaldı |
+| **OpenAI (gpt-5-mini)** | ✓ Çalıştı — ~$0.005/mesaj, hızlı |
 
-Detaylı karşılaştırma: `diagram/local-models.html` ve `diagram/models.html`
+**Öneri:** OpenClaw için **OpenAI gpt-5-mini**. Aylık ~$5-10, kişisel kullanım için bol. Detaylı karşılaştırma: `diagram/models.html` ve `diagram/local-models.html`.
 
 ---
 
-## ⚠️ Önemli notlar (canını yakmadan önce oku)
+## ⚠️ Bilmen gerekenler (canını yakmadan önce oku)
 
-1. **OpenClaw "workspace" gerçek bir sandbox değil.** Sadece bellek operasyonlarını sınırlandırır. `coding` profili Bash erişimi verir → ajan istediği yeri okuyabilir. Gerçek izolasyon için tools profilini değiştir.
+1. **OpenClaw "workspace" gerçek bir sandbox değil.** Sadece bellek operasyonlarını sınırlandırır. `coding` profili Bash erişimi verir → ajan istediği yeri okuyabilir.
 
-2. **Aynı makinede Claude Code varken OpenClaw'a Anthropic API koyma.** Keychain'den Claude Pro kimliğini sessizce alır → Pro kotanı tüketir. **OpenAI veya başka sağlayıcı kullan.**
+2. **Aynı makinede Claude Code varken OpenClaw'a Anthropic API koyma.** Keychain'i ele geçirir → OpenAI veya başka sağlayıcı kullan.
 
-3. **16 GB RAM'de yerel model çalıştıracaksan 7-9B sınıfı yeterli.** OpenClaw 4K token system prompt yolluyor, daha küçük modeller bile prefill'de yavaşlıyor.
+3. **16 GB RAM yerel model için yetersiz.** OpenClaw'un 4K token system prompt'u küçük modelleri prefill'de kasıyor.
 
 4. **Discord botuna kim mesaj atabilirse Jarvis'i kullanabilir.** Pairing approval kullan, sunucunda sadece güvendiğin kişileri tut.
 
 ---
 
-## 🛣️ Yol haritası
+## 🛣️ Bir sonraki video için (foreshadow)
 
-- [x] OpenClaw + Claude Code ortak klasör
-- [x] Discord bot
-- [x] "Hey Jarvis" sesli kontrol
-- [ ] Telegram/WhatsApp opsiyonu
-- [ ] Otomatik routing (hangi ajana gitsin?)
-- [ ] iOS Shortcut ile sesli komut
-- [ ] Obsidian sync ile telefon-Mac iCloud paylaşım
+- [ ] Telegram entegrasyonu (telefondan WhatsApp gibi)
+- [ ] "Hey Jarvis" sesli kontrol (OpenWakeWord + Whisper)
+- [ ] Otomatik routing — hangi ajana gitsin?
+- [ ] iCloud Sync ile telefon-Mac uyumu
+
+---
+
+## 🎨 Diyagramlar
+
+Repoda `diagram/` klasöründe video B-roll için kullanılan terminal estetiğinde HTML görseller:
+
+- `architecture.html` — sistem mimarisi şeması
+- `models.html` — denenen modeller listesi (~6 saatlik savaş)
+- `local-models.html` — yerel modeller RAM rehberi
+
+Tarayıcıda aç, screenshot al.
 
 ---
 
@@ -178,9 +192,9 @@ MIT — kullan, fork'la, satabilirsin. Atıf hoş ama zorunlu değil.
 ## 🦾 Yapan
 
 **Selma** — AI Engineer
-[@selma.builds](https://youtube.com/@selma.builds) · [@selmaaii](https://x.com/selmaaii)
+[@selma.builds](https://youtube.com/@selma.builds) · [@selmaaii](https://x.com/selmaaii) · selma@selmaai.dev
 
-OpenClaw ile **6 saat kavga ettim**, sonunda bu kuruluma ulaştım. Senin de aynı acıyı çekme diye yazdım.
+OpenClaw ile **6 saat kavga ettim**, sonunda bu sade kuruluma ulaştım. Senin de aynı acıyı çekme diye yazdım.
 
 ---
 
@@ -188,5 +202,5 @@ OpenClaw ile **6 saat kavga ettim**, sonunda bu kuruluma ulaştım. Senin de ayn
 
 - [OpenClaw](https://openclaw.ai) — Discord ajanı için
 - [Anthropic Claude Code](https://claude.com/claude-code) — terminal ajanı için
-- [OpenWakeWord](https://github.com/dscripka/openWakeWord) — açık kaynak wake word için
-- [OpenAI](https://openai.com) — Whisper + gpt-5-mini için
+- [Obsidian](https://obsidian.md) — vault görselleştirme için
+- [OpenAI](https://openai.com) — gpt-5-mini için
