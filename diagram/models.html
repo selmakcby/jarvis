@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Jarvis // Denenen Modeller</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #060808;
+        --green: #00ff85;
+        --green-dim: #00b35c;
+        --cyan: #00ffd4;
+        --amber: #ffb547;
+        --red: #ff5d6c;
+        --line: rgba(0, 255, 133, 0.18);
+        --line-strong: rgba(0, 255, 133, 0.55);
+        --text-dim: rgba(220, 255, 235, 0.55);
+        --text: #d8ffe8;
+      }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      html, body {
+        height: 100%;
+        background: var(--bg);
+        color: var(--text);
+        font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+        overflow: hidden;
+      }
+      #matrix { position: fixed; inset: 0; z-index: 0; opacity: 0.12; pointer-events: none; }
+      body::before {
+        content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 4;
+        background: repeating-linear-gradient(to bottom,
+          rgba(0,0,0,0) 0, rgba(0,0,0,0) 2px,
+          rgba(0,0,0,0.18) 3px, rgba(0,0,0,0) 4px);
+        mix-blend-mode: multiply;
+      }
+      body::after {
+        content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 5;
+        background: radial-gradient(ellipse at center,
+          rgba(0,0,0,0) 50%, rgba(0,0,0,0.85) 100%);
+      }
+
+      .stage {
+        position: relative; z-index: 2;
+        height: 100vh; width: 100vw;
+        padding: 50px 90px 40px;
+        display: grid;
+        grid-template-rows: auto 1fr auto;
+        gap: 30px;
+      }
+
+      header {
+        display: flex; align-items: baseline; justify-content: space-between;
+        border-bottom: 1px solid var(--line); padding-bottom: 14px;
+      }
+      .brand { display: flex; align-items: baseline; gap: 22px; }
+      .brand .logo {
+        font-size: 28px; font-weight: 700; color: var(--green);
+        letter-spacing: 3px; text-shadow: 0 0 14px rgba(0,255,133,0.55);
+      }
+      .brand .title {
+        font-size: 16px; color: var(--text-dim);
+        letter-spacing: 5px; text-transform: uppercase;
+      }
+      header .status {
+        display: flex; gap: 18px; font-size: 12px;
+        color: var(--text-dim); letter-spacing: 2px;
+      }
+      header .status .stat {
+        color: var(--text);
+      }
+      header .status .stat .num {
+        color: var(--green); font-weight: 700;
+      }
+
+      /* Table */
+      .table-wrap {
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        overflow: hidden;
+        background: rgba(0, 0, 0, 0.3);
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13.5px;
+      }
+      thead th {
+        background: rgba(0, 255, 133, 0.06);
+        color: var(--green);
+        font-weight: 700;
+        font-size: 11px;
+        letter-spacing: 3px;
+        text-align: left;
+        padding: 14px 18px;
+        border-bottom: 1px solid var(--line-strong);
+        text-transform: uppercase;
+      }
+      tbody td {
+        padding: 14px 18px;
+        border-bottom: 1px solid var(--line);
+        vertical-align: top;
+      }
+      tbody tr:last-child td { border-bottom: none; }
+      tbody tr.win {
+        background: rgba(0, 255, 133, 0.06);
+      }
+      tbody tr.win td:first-child { border-left: 3px solid var(--green); }
+
+      .status-cell {
+        font-size: 14px;
+        font-weight: 700;
+        letter-spacing: 1px;
+        white-space: nowrap;
+      }
+      .status-fail { color: var(--red); }
+      .status-ok { color: var(--green); }
+
+      .model-name {
+        color: var(--text);
+        font-weight: 700;
+        font-size: 14px;
+        letter-spacing: 0.5px;
+      }
+      .model-provider {
+        color: var(--text-dim);
+        font-size: 11px;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        margin-top: 4px;
+      }
+
+      .reason {
+        color: var(--text);
+        line-height: 1.5;
+      }
+      .reason b {
+        color: var(--amber);
+        font-weight: 500;
+      }
+
+      .num-col {
+        color: var(--green-dim);
+        font-size: 13px;
+        font-weight: 700;
+        width: 40px;
+      }
+
+      footer {
+        display: grid;
+        grid-template-columns: 1.4fr 1fr 1fr;
+        gap: 24px; align-items: end;
+        border-top: 1px solid var(--line);
+        padding-top: 14px;
+        font-size: 12.5px; color: var(--text-dim); letter-spacing: 1px;
+      }
+      footer .thesis {
+        color: var(--text); font-size: 14px; line-height: 1.6;
+      }
+      footer .thesis b { color: var(--green); }
+      footer .thesis .red { color: var(--red); }
+      footer .meta { text-align: right; }
+      footer .meta .num { color: var(--green); }
+
+      .legend {
+        display: flex; gap: 18px; font-size: 11px;
+        color: var(--text-dim); letter-spacing: 1.5px;
+      }
+      .legend .dot {
+        display: inline-block; width: 8px; height: 8px;
+        border-radius: 50%; margin-right: 5px;
+      }
+      .legend .ok .dot { background: var(--green); }
+      .legend .fail .dot { background: var(--red); }
+    </style>
+  </head>
+  <body>
+    <canvas id="matrix"></canvas>
+
+    <div class="stage">
+      <header>
+        <div class="brand">
+          <div class="logo">JARVIS_</div>
+          <div class="title">Denenen Modeller — OpenClaw kurulum savaşı</div>
+        </div>
+        <div class="status">
+          <span class="stat"><span class="num">4</span> model</span>
+          <span class="stat"><span class="num">3</span> başarısız</span>
+          <span class="stat"><span class="num">1</span> çalıştı</span>
+          <span class="stat">~<span class="num">6 saat</span></span>
+        </div>
+      </header>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Model</th>
+              <th>Sonuç</th>
+              <th>Neden çalışmadı?</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="num-col">01</td>
+              <td>
+                <div class="model-name">qwen2.5:7b-instruct</div>
+                <div class="model-provider">Ollama · yerel</div>
+              </td>
+              <td class="status-cell status-fail">✕ ÇUVALLADI</td>
+              <td class="reason">
+                16 GB RAM'de prefill <b>30+ saniye</b>. Tool-call'ları
+                halüsinasyonla doldurdu — chokidar hatası anlatıp durdu.
+              </td>
+            </tr>
+            <tr>
+              <td class="num-col">02</td>
+              <td>
+                <div class="model-name">claude-haiku-4-5</div>
+                <div class="model-provider">Anthropic</div>
+              </td>
+              <td class="status-cell status-fail">✕ ÇUVALLADI</td>
+              <td class="reason">
+                OpenClaw <b>keychain'den Claude Pro kimliğimi çaldı</b>.
+                Sessizce Pro kotamı kullanıyordu — fark etmesem fatura kesilecekti.
+              </td>
+            </tr>
+            <tr>
+              <td class="num-col">03</td>
+              <td>
+                <div class="model-name">llama-3.3-70b-versatile</div>
+                <div class="model-provider">Groq Cloud · ücretsiz</div>
+              </td>
+              <td class="status-cell status-fail">✕ ÇUVALLADI</td>
+              <td class="reason">
+                Free tier rate limit: dakikada <b>~1 istek</b>. OpenClaw'un 4K
+                token prompt'u TPM bütçesini bir mesajda yiyor.
+              </td>
+            </tr>
+            <tr class="win">
+              <td class="num-col" style="color: var(--green)">04</td>
+              <td>
+                <div class="model-name">gpt-5-mini</div>
+                <div class="model-provider">OpenAI API</div>
+              </td>
+              <td class="status-cell status-ok">✓ ÇALIŞTI</td>
+              <td class="reason">
+                Auth çakışması yok (Anthropic keychain'le karışmıyor),
+                <b>2-3 saniye</b> yanıt, mesaj başına ~$0.005. Hayatımı kurtardı.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <footer>
+        <div class="thesis">
+          <span class="red">3 başarısız</span> · <b>1 çalıştı</b> →
+          OpenClaw aslında çalışıyor — ama <b>tek doğru sağlayıcı bulmak</b>
+          6 saatimi aldı. Senin almasın diye yazdım bunu.
+        </div>
+        <div class="legend">
+          <span class="ok"><span class="dot"></span>çalıştı</span>
+          <span class="fail"><span class="dot"></span>çuvalladı</span>
+        </div>
+        <div class="meta">
+          <div>2026-04-30 → 2026-05-01</div>
+          <div><span class="num">@selma.builds</span></div>
+        </div>
+      </footer>
+    </div>
+
+    <script>
+      (function () {
+        const c = document.getElementById("matrix");
+        const ctx = c.getContext("2d");
+        function size() { c.width = window.innerWidth; c.height = window.innerHeight; }
+        size();
+        window.addEventListener("resize", size);
+        const chars = "アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホ0123456789{}[]<>=;:./\\$_";
+        const fontSize = 14;
+        const cols = Math.ceil(c.width / fontSize);
+        const drops = Array(cols).fill(1);
+        ctx.font = fontSize + "px JetBrains Mono, monospace";
+        function frame() {
+          ctx.fillStyle = "rgba(6, 8, 8, 0.08)";
+          ctx.fillRect(0, 0, c.width, c.height);
+          ctx.fillStyle = "#00ff85";
+          for (let i = 0; i < drops.length; i++) {
+            const ch = chars.charAt(Math.floor(Math.random() * chars.length));
+            ctx.fillText(ch, i * fontSize, drops[i] * fontSize);
+            if (drops[i] * fontSize > c.height && Math.random() > 0.975) drops[i] = 0;
+            drops[i]++;
+          }
+          requestAnimationFrame(frame);
+        }
+        frame();
+      })();
+    </script>
+  </body>
+</html>

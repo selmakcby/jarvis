@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Jarvis // Mimari</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #060808;
+        --green: #00ff85;
+        --green-dim: #00b35c;
+        --cyan: #00ffd4;
+        --amber: #ffb547;
+        --line: rgba(0, 255, 133, 0.18);
+        --line-strong: rgba(0, 255, 133, 0.55);
+        --text-dim: rgba(220, 255, 235, 0.55);
+        --text: #d8ffe8;
+      }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      html, body {
+        height: 100%;
+        background: var(--bg);
+        color: var(--text);
+        font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+        overflow: hidden;
+      }
+      #matrix {
+        position: fixed; inset: 0; z-index: 0; opacity: 0.14; pointer-events: none;
+      }
+      body::before {
+        content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 4;
+        background: repeating-linear-gradient(to bottom,
+          rgba(0,0,0,0) 0, rgba(0,0,0,0) 2px,
+          rgba(0,0,0,0.18) 3px, rgba(0,0,0,0) 4px);
+        mix-blend-mode: multiply;
+      }
+      body::after {
+        content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 5;
+        background: radial-gradient(ellipse at center,
+          rgba(0,0,0,0) 50%, rgba(0,0,0,0.85) 100%);
+      }
+
+      .stage {
+        position: relative; z-index: 2;
+        height: 100vh; width: 100vw;
+        padding: 50px 80px 40px;
+        display: grid;
+        grid-template-rows: auto 1fr auto;
+        gap: 40px;
+      }
+
+      header {
+        display: flex; align-items: baseline; justify-content: space-between;
+        border-bottom: 1px solid var(--line); padding-bottom: 16px;
+      }
+      .brand { display: flex; align-items: baseline; gap: 22px; }
+      .brand .logo {
+        font-size: 30px; font-weight: 700; color: var(--green);
+        letter-spacing: 3px; text-shadow: 0 0 14px rgba(0,255,133,0.55);
+      }
+      .brand .title {
+        font-size: 16px; color: var(--text-dim);
+        letter-spacing: 5px; text-transform: uppercase;
+      }
+      header .status {
+        display: flex; gap: 18px; font-size: 12px;
+        color: var(--text-dim); letter-spacing: 2px;
+      }
+      header .status .dot {
+        display: inline-block; width: 8px; height: 8px;
+        background: var(--green); border-radius: 50%;
+        box-shadow: 0 0 10px var(--green); margin-right: 6px;
+        animation: pulse 1.6s infinite ease-in-out;
+      }
+      @keyframes pulse {
+        0%, 100% { opacity: 0.4; } 50% { opacity: 1; }
+      }
+
+      /* Diagram: 3 columns + 2 arrow tracks between */
+      .diagram {
+        display: grid;
+        grid-template-columns: 1fr 60px 1.1fr 60px 1fr;
+        gap: 0;
+        align-items: stretch;
+      }
+
+      .node {
+        position: relative;
+        background: linear-gradient(180deg,
+          rgba(0,255,133,0.06), rgba(0,255,133,0.02));
+        border: 1px solid var(--line-strong);
+        border-radius: 6px;
+        padding: 28px 26px;
+        z-index: 2;
+        box-shadow: 0 0 0 1px rgba(0,0,0,0.6) inset, 0 12px 40px rgba(0,0,0,0.6);
+        display: flex; flex-direction: column;
+      }
+      .node::before {
+        content: ""; position: absolute; inset: 0; border-radius: 6px;
+        background: radial-gradient(circle at top left,
+          rgba(0,255,133,0.12), transparent 60%);
+        pointer-events: none;
+      }
+      .node-tag {
+        display: inline-block; font-size: 10.5px; letter-spacing: 3px;
+        color: var(--green); background: rgba(0,255,133,0.08);
+        border: 1px solid var(--line-strong); border-radius: 3px;
+        padding: 4px 9px; margin-bottom: 14px; align-self: flex-start;
+      }
+      .node-title {
+        font-size: 26px; font-weight: 700; color: var(--text);
+        margin-bottom: 6px; letter-spacing: 1px;
+      }
+      .node-sub {
+        font-size: 12.5px; color: var(--text-dim);
+        letter-spacing: 1px; margin-bottom: 18px;
+      }
+      .node-list {
+        list-style: none; font-size: 13px;
+        color: var(--text); line-height: 1.95;
+      }
+      .node-list li::before { content: "▸ "; color: var(--green); }
+      .node-foot {
+        margin-top: auto; padding-top: 14px;
+        border-top: 1px dashed var(--line);
+        font-size: 10.5px; letter-spacing: 1.8px;
+        color: var(--text-dim); text-transform: uppercase;
+      }
+
+      /* Vault — center, cyan */
+      .vault {
+        background: linear-gradient(180deg,
+          rgba(0,255,212,0.08), rgba(0,255,212,0.02));
+        border-color: rgba(0,255,212,0.6);
+        box-shadow:
+          0 0 60px rgba(0,255,212,0.18),
+          0 0 0 1px rgba(0,0,0,0.6) inset,
+          0 12px 40px rgba(0,0,0,0.6);
+      }
+      .vault::before {
+        background: radial-gradient(circle at top left,
+          rgba(0,255,212,0.14), transparent 60%);
+      }
+      .vault .node-tag {
+        color: var(--cyan); background: rgba(0,255,212,0.08);
+        border-color: rgba(0,255,212,0.6);
+      }
+      .vault-tree {
+        font-size: 12.5px; line-height: 1.9; color: var(--text);
+      }
+      .vault-tree .dim { color: var(--text-dim); }
+      .vault-tree .file { color: var(--text); }
+      .vault-tree .folder { color: var(--cyan); }
+      .vault-tree .root { color: var(--amber); font-weight: 500; }
+
+      /* Arrow tracks — between nodes */
+      .arrow-track {
+        display: flex; flex-direction: column;
+        align-items: center; justify-content: center;
+        gap: 6px;
+        position: relative;
+      }
+      .arrow-line {
+        font-size: 24px; line-height: 1;
+        color: var(--green);
+        text-shadow: 0 0 12px rgba(0,255,133,0.6);
+      }
+      .arrow-line.cyan {
+        color: var(--cyan);
+        text-shadow: 0 0 12px rgba(0,255,212,0.6);
+      }
+      .arrow-label {
+        font-size: 10px; letter-spacing: 2px;
+        color: var(--text-dim); text-transform: uppercase;
+      }
+
+      footer {
+        display: grid;
+        grid-template-columns: 1.5fr 1fr 1fr;
+        gap: 28px; align-items: end;
+        border-top: 1px solid var(--line);
+        padding-top: 16px;
+        font-size: 12.5px; color: var(--text-dim); letter-spacing: 1px;
+      }
+      footer .thesis {
+        color: var(--text); font-size: 14px; line-height: 1.6;
+      }
+      footer .thesis b { color: var(--green); }
+      footer .thesis u {
+        color: var(--cyan); text-decoration: none;
+        background: rgba(0,255,212,0.08);
+        padding: 1px 5px; border-radius: 3px;
+      }
+      footer .meta { text-align: right; }
+      footer .meta .num { color: var(--green); }
+    </style>
+  </head>
+  <body>
+    <canvas id="matrix"></canvas>
+
+    <div class="stage">
+      <header>
+        <div class="brand">
+          <div class="logo">JARVIS_</div>
+          <div class="title">iki ajan · tek klasör · ortak hafıza</div>
+        </div>
+        <div class="status">
+          <span><span class="dot"></span>GATEWAY AÇIK</span>
+          <span>ÇALIŞMA ALANI: ~/Jarvis</span>
+          <span>v1.0</span>
+        </div>
+      </header>
+
+      <section class="diagram">
+        <!-- LEFT: OpenClaw -->
+        <div class="node">
+          <span class="node-tag">DAEMON · 7/24</span>
+          <div class="node-title">OpenClaw</div>
+          <div class="node-sub">Discord ajanı · arka planda</div>
+          <ul class="node-list">
+            <li>Discord botu @Jarvis</li>
+            <li>OpenAI gpt-5-mini beyni</li>
+            <li>memory/ ve inbox/ yazar</li>
+          </ul>
+          <div class="node-foot">telefon · kanepe · her yer</div>
+        </div>
+
+        <!-- ARROW TRACK 1 -->
+        <div class="arrow-track">
+          <div class="arrow-line">⇆</div>
+          <div class="arrow-label">paylaşır</div>
+        </div>
+
+        <!-- CENTER: Vault -->
+        <div class="node vault">
+          <span class="node-tag">ORTAK HAFIZA</span>
+          <div class="node-title">~/Jarvis/</div>
+          <div class="node-sub">dosya sistemi · markdown · tek sözleşme</div>
+          <pre class="vault-tree"><span class="root">~/Jarvis/</span>
+<span class="dim">├─</span> <span class="file">CLAUDE.md</span>      <span class="dim">// kişilik</span>
+<span class="dim">├─</span> <span class="file">USER.md</span>        <span class="dim">// Selma</span>
+<span class="dim">├─</span> <span class="file">SOUL.md</span>        <span class="dim">// değerler</span>
+<span class="dim">├─</span> <span class="folder">memory/</span>       <span class="dim">// günlük notlar</span>
+<span class="dim">├─</span> <span class="folder">tasks/</span>        <span class="dim">// görevler</span>
+<span class="dim">├─</span> <span class="folder">inbox/</span>        <span class="dim">// gelen kutusu</span>
+<span class="dim">└─</span> <span class="folder">people/</span>       <span class="dim">// kişiler</span></pre>
+          <div class="node-foot">api yok · bulut yok · sadece dosyalar</div>
+        </div>
+
+        <!-- ARROW TRACK 2 -->
+        <div class="arrow-track">
+          <div class="arrow-line cyan">⇆</div>
+          <div class="arrow-label">paylaşır</div>
+        </div>
+
+        <!-- RIGHT: Claude Code -->
+        <div class="node">
+          <span class="node-tag">CLI · İSTEK ÜZERİNE</span>
+          <div class="node-title">Claude Code</div>
+          <div class="node-sub">masa ajanı · terminalde</div>
+          <ul class="node-list">
+            <li>cd ~/Jarvis && claude</li>
+            <li>CLAUDE.md okur → Jarvis olur</li>
+            <li>memory/ okur, geri yazar</li>
+          </ul>
+          <div class="node-foot">terminal · ide · masa</div>
+        </div>
+      </section>
+
+      <footer>
+        <div class="thesis">
+          iki ajan · tek klasör · sıfır protokol →
+          <b>dosya sistemi mesaj kanalıdır</b>. her ajan diğerinin yazdığını okur.
+          <u>cat memory/*.md</u> tek API.
+        </div>
+        <div>
+          <div style="color: var(--text); margin-bottom: 4px">
+            MALİYET <span style="color: var(--green)">~$0.005 / mesaj</span>
+          </div>
+          <div>OpenAI gpt-5-mini · OpenClaw</div>
+        </div>
+        <div class="meta">
+          <div>YAPILDI <span class="num">2026-05-01</span></div>
+          <div>YAPAN <span class="num">@selma.builds</span></div>
+        </div>
+      </footer>
+    </div>
+
+    <script>
+      (function () {
+        const c = document.getElementById("matrix");
+        const ctx = c.getContext("2d");
+        function size() { c.width = window.innerWidth; c.height = window.innerHeight; }
+        size();
+        window.addEventListener("resize", size);
+        const chars =
+          "アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホ0123456789{}[]<>=;:./\\$_";
+        const fontSize = 14;
+        const cols = Math.ceil(c.width / fontSize);
+        const drops = Array(cols).fill(1);
+        ctx.font = fontSize + "px JetBrains Mono, monospace";
+        function frame() {
+          ctx.fillStyle = "rgba(6, 8, 8, 0.08)";
+          ctx.fillRect(0, 0, c.width, c.height);
+          ctx.fillStyle = "#00ff85";
+          for (let i = 0; i < drops.length; i++) {
+            const ch = chars.charAt(Math.floor(Math.random() * chars.length));
+            ctx.fillText(ch, i * fontSize, drops[i] * fontSize);
+            if (drops[i] * fontSize > c.height && Math.random() > 0.975) drops[i] = 0;
+            drops[i]++;
+          }
+          requestAnimationFrame(frame);
+        }
+        frame();
+      })();
+    </script>
+  </body>
+</html>

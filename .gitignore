@@ -1,0 +1,43 @@
+# Secrets
+.env
+secrets.env
+**/secrets.env
+*.key
+*.pem
+
+# Personal memory and data — fresh installs start empty
+memory/
+inbox/
+calendar/
+people/*.md
+projects/*
+tasks/*.md
+voice-*.md
+
+# Keep README.md inside subfolders
+!**/README.md
+
+# OpenClaw runtime state
+.openclaw/
+**/sessions.json
+**/*.session.json
+
+# macOS
+.DS_Store
+*.log
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# Editors
+.vscode/
+.idea/
+*.swp
+
+# Obsidian
+.obsidian/
+.trash/
